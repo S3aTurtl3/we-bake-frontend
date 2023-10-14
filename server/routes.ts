@@ -1,11 +1,11 @@
 import { ObjectId } from "mongodb";
-
-import { Router, getExpressRouter } from "./framework/router";
-
-import { Friend, Post, User, WebSession } from "./app";
-import { PostDoc, PostOptions } from "./concepts/post";
+import { AccessControl, CollectionModeration, Friend, ParentshipManagement, Recipe, RecipeCollectionManagement, RecipeModeration, User, WebSession } from "./app";
+import { ContentType } from "./concepts/access_control";
+import { ManuallyEnteredRecipe, RecipeDoc } from "./concepts/recipe";
 import { UserDoc } from "./concepts/user";
 import { WebSessionDoc } from "./concepts/websession";
+import { Router, getExpressRouter } from "./framework/router";
+import { parseInputAsObjectId } from "./parser";
 import Responses from "./responses";
 
 class Routes {
@@ -57,37 +57,263 @@ class Routes {
     return { msg: "Logged out!" };
   }
 
-  @Router.get("/posts")
-  async getPosts(author?: string) {
-    let posts;
-    if (author) {
-      const id = (await User.getUserByUsername(author))._id;
-      posts = await Post.getByAuthor(id);
-    } else {
-      posts = await Post.getPosts({});
-    }
-    return Responses.posts(posts);
+  /**
+   * Creates the recipe and gives the author (the user performing this action) both ownership of and
+   * access to the recipe
+   *
+   * @param session
+   * @param recipe JSON string parsable as a ManuallyEnteredRecipe
+   * @returns the recipe object
+   */
+  @Router.post("/recipes")
+  async createRecipe(session: WebSessionDoc, recipe: string) {
+    // TODO: assert parameters parseable as json (includes not being unded)
+    // later put in wrapper parse func that explains error
+    // TODO: type check the input fields
+    const parsedRecipe: ManuallyEnteredRecipe = JSON.parse(recipe);
+    const recipeCreationResponse = await Recipe.create(parsedRecipe);
+    const user = WebSession.getUser(session);
+    await AccessControl.putAccess(user, recipeCreationResponse.recipeId, ContentType.RECIPE);
+    await RecipeModeration.putParentship({ child: recipeCreationResponse.recipeId, parent: user }); // later: create function namses specific to this concept
+    return recipeCreationResponse;
   }
 
-  @Router.post("/posts")
-  async createPost(session: WebSessionDoc, content: string, options?: PostOptions) {
-    const user = WebSession.getUser(session);
-    const created = await Post.create(user, content, options);
-    return { msg: created.msg, post: await Responses.post(created.post) };
+  /**
+   *
+   *
+   * @param session of a user with access to the recipe
+   * @param _id the id of the recipe
+   * @returns the `id` property of the response contains the ObjectId of the recipe's moderator
+   */
+  @Router.get("/recipes/:_id/moderators")
+  async getModerator(session: WebSessionDoc, _id: string) {
+    const parsedId: ObjectId = parseInputAsObjectId(_id); // TODO: handle _id parseable as ObjectId
+
+    const moderatorId: ObjectId = await RecipeModeration.getModerator(parsedId);
+    return { msg: "Success", id: moderatorId };
   }
 
-  @Router.patch("/posts/:_id")
-  async updatePost(session: WebSessionDoc, _id: ObjectId, update: Partial<PostDoc>) {
+  /**
+   *
+   *
+   * @param session of a user with access to the recipe
+   * @param _id the id of the recipe
+   * @returns the properties of the recipe object
+   */
+  @Router.get("/recipes/:_id")
+  async getRecipe(session: WebSessionDoc, _id: string) {
+    const parsedId: ObjectId = parseInputAsObjectId(_id); // TODO: handle _id parseable as ObjectId
+
     const user = WebSession.getUser(session);
-    await Post.isAuthor(user, _id);
-    return await Post.update(_id, update);
+    await AccessControl.assertHasAccess(user, parsedId, ContentType.RECIPE);
+    return await Recipe.getRecipes({ _id: parsedId });
   }
 
-  @Router.delete("/posts/:_id")
-  async deletePost(session: WebSessionDoc, _id: ObjectId) {
+  /**
+   *
+   *
+   * @param session of a user
+   * @param _id the id of the recipe
+   * @returns the recipes the user has access to
+   */
+  @Router.get("/recipes")
+  async getAccessibleRecipes(session: WebSessionDoc) {
     const user = WebSession.getUser(session);
-    await Post.isAuthor(user, _id);
-    return Post.delete(_id);
+    const accessibleRecipeIds: { _id: ObjectId }[] = (await AccessControl.getAccessibleContent(user, ContentType.RECIPE)).map((id) => {
+      return { _id: id };
+    });
+    const recipes: RecipeDoc[] = await Recipe.getRecipes({ $or: accessibleRecipeIds });
+
+    return { msg: "Success", recipes: recipes };
+  }
+
+  /**
+   * Creates the recipe collection and its corrsesponding access controls
+   *
+   * @param session
+   * @param name the name of the recipe collection
+   * @returns the created recipe collection object
+   */
+  @Router.post("/recipe_collections")
+  async createRecipeCollection(session: WebSessionDoc, name: string) {
+    const user = WebSession.getUser(session);
+    const collectionCreationResponse = await RecipeCollectionManagement.createCollection(name);
+    await AccessControl.putAccess(user, collectionCreationResponse.id, ContentType.COLLECTION);
+    await CollectionModeration.putParentship({ child: collectionCreationResponse.id, parent: user });
+    return collectionCreationResponse;
+  }
+
+  /**
+   *
+   * @param session
+   * @param _id id of recipe collection
+   * @returns the name of the recipe collection with the given id
+   */
+  @Router.get("/recipe_collections/:_id")
+  async getRecipeCollectionName(session: WebSessionDoc, _id: string) {
+    const parsedId: ObjectId = parseInputAsObjectId(_id); // TODO: handle _id parseable as ObjectId
+    const user = WebSession.getUser(session);
+    await AccessControl.assertHasAccess(user, parsedId, ContentType.COLLECTION);
+    return await RecipeCollectionManagement.getCollectionById(parsedId);
+  }
+
+  /**
+   * Uses the fields of `update` to overwrite the fields in the recipe whose id is `_id`
+   *
+   * @param session of a user who is the author of the recipe
+   * @param _id
+   * @param update
+   * @return a message indicating successful update of the recipe (if successful)
+   */
+  @Router.patch("/recipes/:_id")
+  async updateRecipe(session: WebSessionDoc, _id: string, update: string) {
+    // note: it is required that update is string for lightweight front-end... else its fields (which are objects, but were rendered as strings by lightweight frontend) cant be parsed
+    // authorship is implemented and validated by the "moderation" concept
+    const user = WebSession.getUser(session);
+    const parsedId: ObjectId = parseInputAsObjectId(_id);
+    await AccessControl.assertHasAccess(user, parsedId, ContentType.RECIPE);
+    const parsedUpdate: Partial<RecipeDoc> = JSON.parse(update);
+    return await Recipe.update(parsedId, parsedUpdate);
+  }
+
+  /**
+   *
+   * @param session of a user with access to the collection
+   * @param _id the id of the collection to which a recipe should be added
+   * @param recipeId the id of the recipe to add to the collection
+   */
+  @Router.put("/recipe_collections/:_id/recipes")
+  async addRecipeToCollection(session: WebSessionDoc, _id: string, recipeId: string) {
+    const user = WebSession.getUser(session);
+    const parsedRecipeId: ObjectId = parseInputAsObjectId(recipeId); // handle unparseable
+    const parsedCollectionId: ObjectId = parseInputAsObjectId(_id); // handle unparseable
+    await AccessControl.assertHasAccess(user, parsedRecipeId, ContentType.RECIPE);
+    await AccessControl.assertHasAccess(user, parsedCollectionId, ContentType.COLLECTION);
+    //assert content existence
+    await Recipe.getRecipeById(parsedRecipeId);
+    await RecipeCollectionManagement.getCollectionById(parsedCollectionId);
+
+    await ParentshipManagement.putParentship({ child: parsedRecipeId, parent: parsedCollectionId });
+    return { msg: "Recipe added!" };
+  }
+
+  /**
+   *
+   * @param session of a user who is the author of a recipe collection
+   * @param _id the id of the collection
+   * @param recipeId the id of the recipe to remove from the collection
+   */
+  @Router.delete("/recipe_collections/:_id/recipes/:recipeId")
+  async removeRecipeFromCollection(session: WebSessionDoc, _id: string, recipeId: string) {
+    const user = WebSession.getUser(session);
+    const parsedRecipeId: ObjectId = parseInputAsObjectId(recipeId); // handle unparseable
+    const parsedCollectionId: ObjectId = parseInputAsObjectId(_id); // handle unparseable
+    await AccessControl.assertHasAccess(user, parsedRecipeId, ContentType.RECIPE);
+    await AccessControl.assertHasAccess(user, parsedCollectionId, ContentType.COLLECTION);
+    //assert content existence
+    await Recipe.getRecipeById(parsedRecipeId);
+    await RecipeCollectionManagement.getCollectionById(parsedCollectionId);
+
+    return await ParentshipManagement.deleteRelationship(parsedRecipeId, parsedCollectionId);
+  }
+
+  /**
+   *
+   * @param session of a user with access to the recipe collection
+   * @param _id the id of the RecipeCollection
+   * @returns the properties of recipes existing in the collection
+   */
+  @Router.get("/recipe_collections/:_id")
+  async getRecipesFromCollection(session: WebSessionDoc, _id: string) {
+    const user = WebSession.getUser(session);
+    const parsedCollectionId: ObjectId = parseInputAsObjectId(_id); // handle unparseable
+    //assert content existence
+    await RecipeCollectionManagement.getCollectionById(parsedCollectionId);
+
+    await AccessControl.assertHasAccess(user, parsedCollectionId, ContentType.COLLECTION);
+    const recipes: ObjectId[] = await ParentshipManagement.getAllChildren(parsedCollectionId);
+    return { msg: "Success", recipes: recipes }; // LEFT OFF: Doesn't work anymore
+  }
+
+  /**
+   *  Grants a user access to the recipe; can only be performed by author of recipe
+   *
+   * @param session
+   * @param recipeId the id of the recipe
+   * @param userId the id of the user who will be granted access to the recipe
+   */
+  @Router.put("/recipe_access_controls/users/:userId/accessibleContent")
+  async grantUserAccessToRecipe(session: WebSessionDoc, recipeId: string, userId: string) {
+    const user = WebSession.getUser(session);
+    const parsedRecipeId: ObjectId = parseInputAsObjectId(recipeId); // TODO: handle _id parseable as ObjectId
+    //assert content existence
+    await Recipe.getRecipeById(parsedRecipeId);
+
+    const parsedUserId: ObjectId = parseInputAsObjectId(userId);
+    await User.userExists(parsedUserId);
+    await RecipeModeration.assertIsModerator(parsedRecipeId, user);
+    return await AccessControl.putAccess(parsedUserId, parsedRecipeId, ContentType.RECIPE);
+  }
+
+  /**
+   * Users with access to a collection by default have access to all recipes that are in and subsequently added to
+   * the collection; can only be performed by the recipe collection author
+   *
+   * @param session
+   * @param _id the id of the collection
+   * @param userId the id of the user who will be granted access to the collection
+   */
+  @Router.put("/collection_access_controls/users/:userId/accessibleContent")
+  async grantUserAccessToCollection(session: WebSessionDoc, _id: string, userId: string) {
+    const user = WebSession.getUser(session);
+    const parsedCollectionId: ObjectId = parseInputAsObjectId(_id); // TODO: handle _id parseable as ObjectId
+    //assert content existence
+    await RecipeCollectionManagement.getCollectionById(parsedCollectionId);
+
+    const parsedUserId: ObjectId = parseInputAsObjectId(userId);
+    await User.userExists(parsedUserId);
+    await CollectionModeration.assertIsModerator(parsedCollectionId, user);
+    return await AccessControl.putAccess(parsedUserId, parsedCollectionId, ContentType.COLLECTION);
+  }
+
+  /**
+   *
+   * @param session
+   * @param recipeId the id of the recipe
+   * @param userId the id of the user whose access will be removed from the recipe
+   */
+  @Router.delete("/recipe_access_controls/users/:userId/accessibleContent/:recipeId")
+  async removeUserAccessToRecipe(session: WebSessionDoc, recipeId: string, userId: string) {
+    const user = WebSession.getUser(session);
+    const parsedRecipeId: ObjectId = parseInputAsObjectId(recipeId); // TODO: handle _id parseable as ObjectId
+    //assert content existence
+    await Recipe.getRecipeById(parsedRecipeId);
+
+    const parsedUserId: ObjectId = parseInputAsObjectId(userId);
+    await User.userExists(parsedUserId);
+    await RecipeModeration.assertIsModerator(parsedRecipeId, user);
+    return await AccessControl.removeAccess(parsedUserId, parsedRecipeId, ContentType.RECIPE);
+  }
+
+  /**
+   * Makes it so that the user with id `userId` no longer has access to the the recipe collection corresponding
+   * to the access controller with id `_id`; can only be performed by the author of the recipe collection
+   *
+   * @param session
+   * @param _id the id of the collection's access control
+   * @param userId the id of the user whose access will be removed from the collection
+   */
+  @Router.delete("/collection_access_controls/users/:userId/accessibleContent/:_id")
+  async removeUserAccessToRecipeCollection(session: WebSessionDoc, _id: string, userId: string) {
+    const user = WebSession.getUser(session);
+    const parsedCollectionId: ObjectId = parseInputAsObjectId(_id); // TODO: handle _id parseable as ObjectId
+    //assert content existence
+    await RecipeCollectionManagement.getCollectionById(parsedCollectionId);
+
+    const parsedUserId: ObjectId = parseInputAsObjectId(userId);
+    await User.userExists(parsedUserId);
+    await CollectionModeration.assertIsModerator(parsedCollectionId, user);
+    return await AccessControl.removeAccess(parsedUserId, parsedCollectionId, ContentType.COLLECTION);
   }
 
   @Router.get("/friends")
