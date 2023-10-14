@@ -12,7 +12,7 @@ const { currentUsername } = storeToRefs(useUserStore());
   <p class="author">author is TBD</p>
   <p>{{ props.recipe.dishName }}</p>
   <div class="base">
-    <menu v-if="false">
+    <menu v-if="true">
       <!-- TODO: instead of "false", check if the current user is author-->
       <li><button class="btn-small pure-button" @click="emit('editPost', props.recipe._id)">Edit</button></li>
     </menu>

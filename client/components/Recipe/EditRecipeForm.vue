@@ -3,13 +3,14 @@ import { ref } from "vue";
 import { fetchy } from "../../utils/fetchy";
 import { formatDate } from "../../utils/formatDate";
 
-const props = defineProps(["post"]);
-const content = ref(props.post.content);
+const props = defineProps(["recipe"]);
+const name = ref(props.recipe.dishName);
+const step1 = ref<string>(props.recipe.steps[0].instructions);
 const emit = defineEmits(["editPost", "refreshPosts"]);
 
 const editPost = async (content: string) => {
   try {
-    await fetchy(`api/posts/${props.post._id}`, "PATCH", { body: { update: { content: content } } });
+    await fetchy(`api/recipes/${props.recipe._id}`, "PATCH", { body: { update: content } });
   } catch (e) {
     return;
   }
@@ -19,16 +20,19 @@ const editPost = async (content: string) => {
 </script>
 
 <template>
-  <form @submit.prevent="editPost(content)">
-    <p class="author">{{ props.post.author }}</p>
-    <textarea id="content" v-model="content" placeholder="Create a post!" required> </textarea>
+  <form @submit.prevent="editPost(JSON.stringify({ dishName: name, steps: [{ instructions: step1 }] }))">
+    <h3>Dish name</h3>
+    <textarea id="content" v-model="name" placeholder="Dish name" required> </textarea>
+    <h3>Step 1</h3>
+    <textarea id="content" v-model="step1" placeholder="Measure out the flour..." required> </textarea>
+
     <div class="base">
       <menu>
         <li><button class="btn-small pure-button-primary pure-button" type="submit">Save</button></li>
         <li><button class="btn-small pure-button" @click="emit('editPost')">Cancel</button></li>
       </menu>
-      <p v-if="props.post.dateCreated !== props.post.dateUpdated" class="timestamp">Edited on: {{ formatDate(props.post.dateUpdated) }}</p>
-      <p v-else class="timestamp">Created on: {{ formatDate(props.post.dateCreated) }}</p>
+      <p v-if="props.recipe.dateCreated !== props.recipe.dateUpdated" class="timestamp">Edited on: {{ formatDate(props.recipe.dateUpdated) }}</p>
+      <p v-else class="timestamp">Created on: {{ formatDate(props.recipe.dateCreated) }}</p>
     </div>
   </form>
 </template>

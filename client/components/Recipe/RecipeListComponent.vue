@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import EditPostForm from "@/components/Post/EditPostForm.vue";
+import EditRecipeForm from "@/components/Recipe/EditRecipeForm.vue";
 import RecipeComponent from "@/components/Recipe/RecipeComponent.vue";
 import { useUserStore } from "@/stores/user";
 import { fetchy } from "@/utils/fetchy";
@@ -39,7 +39,7 @@ onBeforeMount(async () => {
 
 <template>
   <section v-if="isLoggedIn">
-    <h2>Create a post:</h2>
+    <h2>Create a Recipe:</h2>
     <CreateRecipeForm @refreshPosts="getRecipes" />
   </section>
   <div class="row">
@@ -50,7 +50,7 @@ onBeforeMount(async () => {
   <section class="posts" v-if="loaded && posts.length !== 0">
     <article v-for="post in posts" :key="post._id">
       <RecipeComponent v-if="editing !== post._id" :recipe="post" @refreshPosts="getRecipes" @editPost="updateEditing" />
-      <EditPostForm v-else :post="post" @refreshPosts="getRecipes" @editPost="updateEditing" />
+      <EditRecipeForm v-else :recipe="post" @refreshPosts="getRecipes" @editPost="updateEditing" />
     </article>
   </section>
   <p v-else-if="loaded">No posts found</p>
