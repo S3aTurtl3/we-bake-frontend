@@ -31,10 +31,73 @@ function updateEditing(id: string) {
   editing.value = id;
 }
 
+type RecipeIdentifier = { id: string; name: string };
+const defaultRecipeIdentifier = { id: "", name: "" };
+
+const objectOfAccessControl = ref<RecipeIdentifier>({ id: "", name: "(Press 'Manage access controls' on the desired recipe)" }); // the id of the recipe whose access is being controlled
+
+/**
+ * Helps with loading a ui element that allows the user to manage the access controls for a given piece of user content
+ *
+ * @param id the id of the recipe whose access is being managed
+ */
+async function activateAccessManager(id: string) {
+  objectOfAccessControl.value.id = id;
+  try {
+    objectOfAccessControl.value.name = (await fetchy(`api/recipes/${id}`, "GET")).dishName; // [UX] TODO: when the database updates, re-perform this call! e.g. if you update the name of the recipe in access controls
+  } catch (_) {
+    return;
+  }
+}
+
+function disactivateAccessManager() {
+  objectOfAccessControl.value = defaultRecipeIdentifier;
+}
+
+type AccessRequestInput = {
+  subject: string; // the username of the person being granted access to an item of user content
+  object: string; // the id of the recipe
+};
+async function grantSubjectAccessToObject(requestedAccessControl: AccessRequestInput) {
+  // convert the subjectName to an id
+  let subjectId: string = "";
+  try {
+    const subjectInfo = await fetchy(`api/users/${requestedAccessControl.subject}`, "GET");
+    subjectId = subjectInfo._id;
+  } catch (_) {
+    return;
+  }
+
+  try {
+    await fetchy(`api/recipe_access_controls/users/${subjectId}/accessibleContent`, "PUT", { body: { recipeId: requestedAccessControl.object } }); // TODO: display state of user access (whether they have it or not)
+  } catch (_) {
+    return;
+  }
+}
+
+async function removeSubjectAccessToObject(requestedAccessControl: AccessRequestInput) {
+  // convert the subjectName to an id
+  let subjectId: string = "";
+  try {
+    const subjectInfo = await fetchy(`api/users/${requestedAccessControl.subject}`, "GET");
+    subjectId = subjectInfo._id;
+  } catch (_) {
+    return;
+  }
+
+  try {
+    await fetchy(`api/recipe_access_controls/users/${subjectId}/accessibleContent/${requestedAccessControl.object}`, "DELETE"); // TODO: display state of user access (whether they have it or not)
+  } catch (_) {
+    return;
+  }
+}
+
 onBeforeMount(async () => {
   await getRecipes(); // TODO: Catch error from server when not logged in
   loaded.value = true;
 });
+
+const subjectOfAccessControlName = ref<string>(""); // the username of the user whose access is being changed
 </script>
 
 <template>
@@ -47,9 +110,23 @@ onBeforeMount(async () => {
     <h2 v-else>Posts by {{ searchAuthor }}:</h2>
     <SearchPostForm @getPostsByAuthor="getRecipes" />
   </div>
+  <div class="accessControlManager">
+    <div id="newUserAccess">
+      <h3 class="recipeObjectName">Access for Recipe: {{ objectOfAccessControl.name }}</h3>
+      <div class="field">
+        <label>
+          User ID
+          <input type="text" v-model="subjectOfAccessControlName" />
+        </label>
+        <button @click="() => grantSubjectAccessToObject({ subject: subjectOfAccessControlName, object: objectOfAccessControl.id })">Grant access</button>
+        <button @click="() => removeSubjectAccessToObject({ subject: subjectOfAccessControlName, object: objectOfAccessControl.id })">Remove access</button>
+        <!--show current state-->
+      </div>
+    </div>
+  </div>
   <section class="posts" v-if="loaded && posts.length !== 0">
     <article v-for="post in posts" :key="post._id">
-      <RecipeComponent v-if="editing !== post._id" :recipe="post" @refreshPosts="getRecipes" @editPost="updateEditing" />
+      <RecipeComponent v-if="editing !== post._id" :recipe="post" @refreshPosts="getRecipes" @editPost="updateEditing" v-on:manage-access="activateAccessManager" />
       <EditRecipeForm v-else :recipe="post" @refreshPosts="getRecipes" @editPost="updateEditing" />
     </article>
   </section>

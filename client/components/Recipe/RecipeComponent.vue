@@ -4,7 +4,7 @@ import { formatDate } from "@/utils/formatDate";
 import { storeToRefs } from "pinia";
 
 const props = defineProps(["recipe"]);
-const emit = defineEmits(["editPost", "refreshPosts"]);
+const emit = defineEmits(["editPost", "refreshPosts", "manageAccess"]);
 const { currentUsername } = storeToRefs(useUserStore());
 </script>
 
@@ -12,9 +12,11 @@ const { currentUsername } = storeToRefs(useUserStore());
   <p class="author">author is TBD</p>
   <p>{{ props.recipe.dishName }}</p>
   <div class="base">
-    <menu v-if="true">
-      <!-- TODO: instead of "false", check if the current user is author-->
-      <li><button class="btn-small pure-button" @click="emit('editPost', props.recipe._id)">Edit</button></li>
+    <menu>
+      <!-- TODO: instead of "true", check if the current user has access-->
+      <li v-if="true"><button class="btn-small pure-button" @click="emit('editPost', props.recipe._id)">Edit</button></li>
+      <!-- TODO: instead of "true", check if the current user is author-->
+      <li v-if="true"><button class="btn-small pure-button" @click="emit('manageAccess', props.recipe._id)">Manage Access Controls</button></li>
     </menu>
     <article class="timestamp">
       <p v-if="props.recipe.dateCreated !== props.recipe.dateUpdated">Edited on: {{ formatDate(props.recipe.dateUpdated) }}</p>

@@ -106,7 +106,7 @@ class Routes {
 
     const user = WebSession.getUser(session);
     await AccessControl.assertHasAccess(user, parsedId, ContentType.RECIPE);
-    return await Recipe.getRecipes({ _id: parsedId });
+    return await Recipe.getRecipeById(parsedId);
   }
 
   /**

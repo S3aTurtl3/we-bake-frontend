@@ -24,10 +24,10 @@ const emptyForm = () => {
 </script>
 
 <template>
-  <form @submit.prevent="createRecipe(content)">
-    <label for="content">RecipeContent:</label>
-    <textarea id="content" v-model="content" placeholder="Create a post!" required> </textarea>
-    <button type="submit" class="pure-button-primary pure-button">Create Post</button>
+  <form @submit.prevent="createRecipe(JSON.stringify({ dishName: content }))">
+    <label for="content">Recipe Name:</label>
+    <textarea id="content" v-model="content" placeholder="Name the Recipe!" required> </textarea>
+    <button type="submit" class="pure-button-primary pure-button">Create Recipe</button>
   </form>
 </template>
 

@@ -4,8 +4,8 @@ import { fetchy } from "../../utils/fetchy";
 import { formatDate } from "../../utils/formatDate";
 
 const props = defineProps(["recipe"]);
-const name = ref(props.recipe.dishName);
-const step1 = ref<string>(props.recipe.steps[0].instructions);
+const name = ref<string>(props.recipe.dishName ? props.recipe.dishName : "untitled recipe"); // what happens if you update the recipe in another tab? that state should be reflected here...sync with database updates for this recipe
+const step1 = ref<string>(props.recipe.steps ? props.recipe.steps[0].instructions : "");
 const emit = defineEmits(["editPost", "refreshPosts"]);
 
 const editPost = async (content: string) => {
