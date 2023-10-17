@@ -35,6 +35,7 @@ type RecipeIdentifier = { id: string; name: string };
 const defaultRecipeIdentifier = { id: "", name: "" };
 
 const objectOfAccessControl = ref<RecipeIdentifier>({ id: "", name: "(Press 'Manage access controls' on the desired recipe)" }); // the id of the recipe whose access is being controlled
+const disableAccessControlButtons = ref<boolean>(true);
 
 /**
  * Helps with loading a ui element that allows the user to manage the access controls for a given piece of user content
@@ -43,6 +44,11 @@ const objectOfAccessControl = ref<RecipeIdentifier>({ id: "", name: "(Press 'Man
  */
 async function activateAccessManager(id: string) {
   objectOfAccessControl.value.id = id;
+  if (id.length === 0) {
+    disableAccessControlButtons.value = true;
+    return;
+  }
+  disableAccessControlButtons.value = false;
   try {
     objectOfAccessControl.value.name = (await fetchy(`api/recipes/${id}`, "GET")).dishName; // [UX] TODO: when the database updates, re-perform this call! e.g. if you update the name of the recipe in access controls
   } catch (_) {
@@ -115,11 +121,13 @@ const subjectOfAccessControlName = ref<string>(""); // the username of the user 
       <h3 class="recipeObjectName">Access for Recipe: {{ objectOfAccessControl.name }}</h3>
       <div class="field">
         <label>
-          User ID
+          Username
           <input type="text" v-model="subjectOfAccessControlName" />
         </label>
-        <button @click="() => grantSubjectAccessToObject({ subject: subjectOfAccessControlName, object: objectOfAccessControl.id })">Grant access</button>
-        <button @click="() => removeSubjectAccessToObject({ subject: subjectOfAccessControlName, object: objectOfAccessControl.id })">Remove access</button>
+        <button v-bind:disabled="disableAccessControlButtons" @click="() => grantSubjectAccessToObject({ subject: subjectOfAccessControlName, object: objectOfAccessControl.id })">Grant access</button>
+        <button v-bind:disabled="disableAccessControlButtons" @click="() => removeSubjectAccessToObject({ subject: subjectOfAccessControlName, object: objectOfAccessControl.id })">
+          Remove access
+        </button>
         <!--show current state-->
       </div>
     </div>
