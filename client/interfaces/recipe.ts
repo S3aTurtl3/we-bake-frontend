@@ -12,6 +12,6 @@ export interface Recipe {
   _id: string;
   dishName: string;
   outputSpecification: string;
-  ingredients: string[];
+  setupRequirements: string[];
   steps: string[]; // TODO: cast as mediatype
 }

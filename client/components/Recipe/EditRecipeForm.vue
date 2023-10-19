@@ -7,16 +7,16 @@ import { formatDate } from "../../utils/formatDate";
 const props = defineProps(["recipe"]);
 
 function renderedToDocumentedRecipe(recipe: RenderForEditRecipe): Recipe {
-  return { _id: recipe._id, dishName: recipe.dishName, outputSpecification: recipe.description, ingredients: recipe.ingredients, steps: recipe.steps };
+  return { _id: recipe._id, dishName: recipe.dishName, outputSpecification: recipe.description, setupRequirements: recipe.ingredients, steps: recipe.steps };
 }
 
 const recipeCopy = JSON.parse(JSON.stringify(props.recipe));
 const rec: RenderForEditRecipe = reactive({
   _id: recipeCopy._id,
-  ingredientsRows: recipeCopy.ingredients ? recipeCopy.ingredients.length : 0,
+  ingredientsRows: recipeCopy.setupRequirements ? recipeCopy.setupRequirements.length : 0,
   stepRows: recipeCopy.steps ? recipeCopy.steps.length : 0,
   dishName: recipeCopy.dishName ?? "untitled recipe",
-  ingredients: recipeCopy.ingredients ?? [],
+  ingredients: recipeCopy.setupRequirements ?? [],
   description: recipeCopy.outputSpecification ?? "",
   steps: recipeCopy.steps ?? [],
 }); // placeholders!
