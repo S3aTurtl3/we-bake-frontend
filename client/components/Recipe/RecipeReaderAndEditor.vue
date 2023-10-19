@@ -14,15 +14,20 @@ function toggleEditView() {
   editing.value = !editing.value;
 }
 
+async function stopEditing() {
+  await loadRecipe();
+  toggleEditView();
+}
+
 async function loadRecipe() {
-  let postResults;
+  let fetchResults;
   try {
-    postResults = await fetchy("/api/recipes/" + props.recipeId, "GET");
+    fetchResults = await fetchy("/api/recipes/" + props.recipeId, "GET");
   } catch (_) {
     console.log(_);
     return;
   }
-  recipe.value = postResults;
+  recipe.value = fetchResults;
 }
 
 const { currentUsername } = storeToRefs(useUserStore());
@@ -37,8 +42,8 @@ onBeforeMount(async () => {
   <!--use bread-crumb-->
   <div v-if="loaded">
     <button v-on:click="toggleEditView" v-if="!editing">Edit</button>
-    <RecipeReader v-if="!editing" v-bind:recipeId="props.recipeId" />
-    <EditRecipeForm v-if="editing" v-bind:recipe="recipe" v-on:refreshPosts="loadRecipe" v-on:editPost="toggleEditView" />
+    <RecipeReader v-bind:recipe="recipe" />
+    <EditRecipeForm v-if="editing" v-bind:recipe="recipe" v-on:refreshPosts="loadRecipe" v-on:editPost="stopEditing" />
   </div>
 </template>
 

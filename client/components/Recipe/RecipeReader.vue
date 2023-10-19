@@ -2,38 +2,22 @@
 import { useUserStore } from "@/stores/user";
 import { formatDate } from "@/utils/formatDate";
 import { storeToRefs } from "pinia";
-import { onBeforeMount, ref } from "vue";
-import { fetchy } from "../../utils/fetchy";
+import { ComputedRef, computed, ref } from "vue";
 
-const props = defineProps(["recipeId"]);
+const props = defineProps(["recipe"]);
 type MediaType = { instructions: string; visuals: Array<{ url: string }> };
 const loaded = ref(false);
-const parsedRecipe = ref<ParsedRecipe>();
-const recipeDoc = ref();
-
-async function loadRecipe() {
-  let recipe;
-  try {
-    recipe = await fetchy(`/api/recipes/${props.recipeId}`, "GET"); // TODO: type checking as well...
-  } catch (e) {
-    console.log(e);
-    return;
-  }
-  recipeDoc.value = recipe;
-  parsedRecipe.value = {
-    dishName: recipe.dishName ?? "Untitled Recipe",
-    outputSpecification: recipe.outputSpecification ?? "",
-    setupRequirements: recipe.setupRequirements ?? new Array<string>(),
-    steps: recipe.steps ?? new Array<MediaType>(),
-    authorName: "REPLACE", // TODO: REplace
-  };
-}
+const recipeDoc = props.recipe;
 
 type ParsedRecipe = { dishName: string; outputSpecification: Array<MediaType>; setupRequirements: Array<MediaType>; steps: Array<MediaType>; authorName: string };
-
-onBeforeMount(async () => {
-  await loadRecipe(); // TODO: Catch error from server when not logged in
-  loaded.value = true;
+const parsedRecipe: ComputedRef<ParsedRecipe> = computed(() => {
+  return {
+    dishName: props.recipe.dishName ?? "Untitled Recipe",
+    outputSpecification: props.recipe.outputSpecification ?? "",
+    setupRequirements: props.recipe.setupRequirements ?? new Array<string>(),
+    steps: props.recipe.steps ?? new Array<MediaType>(),
+    authorName: "REPLACE", // TODO: REplace
+  };
 });
 
 const { currentUsername } = storeToRefs(useUserStore());
@@ -46,9 +30,15 @@ const { currentUsername } = storeToRefs(useUserStore());
     <h2>Description</h2>
     <p>{{ parsedRecipe.outputSpecification }}</p>
     <h2>Ingredients/Equipment</h2>
-    <p>{{ parsedRecipe.setupRequirements }}</p>
+    <div class="ingredient">
+      <ul>
+        <li v-for="i in parsedRecipe.setupRequirements.length" :key="i">{{ parsedRecipe.setupRequirements[i - 1] }}</li>
+      </ul>
+    </div>
     <h2>Steps</h2>
-    <p>{{ parsedRecipe.steps }}</p>
+    <ol>
+      <li v-for="i in parsedRecipe.steps.length" :key="i">{{ parsedRecipe.steps[i - 1] }}</li>
+    </ol>
     <div class="base">
       <article class="timestamp">
         <p v-if="recipeDoc.dateCreated !== recipeDoc.dateUpdated">Edited on: {{ formatDate(recipeDoc.dateUpdated) }}</p>
@@ -56,8 +46,11 @@ const { currentUsername } = storeToRefs(useUserStore());
       </article>
     </div>
   </article>
-  <article v-else>
+  <article v-else-if="loaded">
     <p>Recipe could not be loaded.</p>
+  </article>
+  <article v-else>
+    <p>Loading...</p>
   </article>
 </template>
 
