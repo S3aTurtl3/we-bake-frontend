@@ -50,7 +50,7 @@ async function activateAccessManager(id: string) {
   }
   disableAccessControlButtons.value = false;
   try {
-    objectOfAccessControl.value.name = (await fetchy(`api/recipes/${id}`, "GET")).dishName; // [UX] TODO: when the database updates, re-perform this call! e.g. if you update the name of the recipe in access controls
+    objectOfAccessControl.value.name = (await fetchy(`/api/recipes/${id}`, "GET")).dishName; // [UX] TODO: when the database updates, re-perform this call! e.g. if you update the name of the recipe in access controls
   } catch (_) {
     return;
   }
@@ -119,6 +119,7 @@ const subjectOfAccessControlName = ref<string>(""); // the username of the user 
   <div class="accessControlManager">
     <div id="newUserAccess">
       <h3 class="recipeObjectName">Access for Recipe: {{ objectOfAccessControl.name }}</h3>
+      <!--would be better to associate with an ID and thus visually, rather than displaying a name which could get out of sync-->
       <div class="field">
         <label>
           Username
