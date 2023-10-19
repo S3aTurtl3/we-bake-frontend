@@ -22,8 +22,8 @@ async function loadRecipe() {
   recipeDoc.value = recipe;
   parsedRecipe.value = {
     dishName: recipe.dishName ?? "Untitled Recipe",
-    outputSpecification: recipe.outputSpecification ?? new Array<MediaType>(),
-    setupRequirements: recipe.setupRequirements ?? new Array<MediaType>(),
+    outputSpecification: recipe.outputSpecification ?? "",
+    setupRequirements: recipe.setupRequirements ?? new Array<string>(),
     steps: recipe.steps ?? new Array<MediaType>(),
     authorName: "REPLACE", // TODO: REplace
   };
@@ -57,7 +57,7 @@ const { currentUsername } = storeToRefs(useUserStore());
     </div>
   </article>
   <article v-else>
-    <p class="author">author hi {{ parsedRecipe }}</p>
+    <p>Recipe could not be loaded.</p>
   </article>
 </template>
 

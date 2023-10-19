@@ -36,8 +36,7 @@ onBeforeMount(async () => {
 <template>
   <!--use bread-crumb-->
   <div v-if="loaded">
-    <p>{{ recipe }}</p>
-    <button v-on:click="toggleEditView">Toggle Edit</button>
+    <button v-on:click="toggleEditView" v-if="!editing">Edit</button>
     <RecipeReader v-if="!editing" v-bind:recipeId="props.recipeId" />
     <EditRecipeForm v-if="editing" v-bind:recipe="recipe" v-on:refreshPosts="loadRecipe" v-on:editPost="toggleEditView" />
   </div>

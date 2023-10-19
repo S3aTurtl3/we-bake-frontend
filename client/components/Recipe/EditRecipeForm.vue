@@ -1,12 +1,43 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { reactive } from "vue";
+import { Recipe, RenderForEditRecipe } from "../../interfaces/recipe";
 import { fetchy } from "../../utils/fetchy";
 import { formatDate } from "../../utils/formatDate";
 
 const props = defineProps(["recipe"]);
-const name = ref<string>(props.recipe.dishName ? props.recipe.dishName : "untitled recipe"); // what happens if you update the recipe in another tab? that state should be reflected here...sync with database updates for this recipe
-const step1 = ref<string>(props.recipe.steps ? props.recipe.steps[0].instructions : "");
+
+function renderedToDocumentedRecipe(recipe: RenderForEditRecipe): Recipe {
+  return { _id: recipe._id, dishName: recipe.dishName, outputSpecification: recipe.description, ingredients: recipe.ingredients, steps: recipe.steps };
+}
+
+const recipeCopy = JSON.parse(JSON.stringify(props.recipe));
+const rec: RenderForEditRecipe = reactive({
+  _id: recipeCopy._id,
+  ingredientsRows: recipeCopy.ingredients ? recipeCopy.ingredients.length : 0,
+  stepRows: recipeCopy.steps ? recipeCopy.steps.length : 0,
+  dishName: recipeCopy.dishName ?? "untitled recipe",
+  ingredients: recipeCopy.ingredients ?? [],
+  description: recipeCopy.outputSpecification ?? "",
+  steps: recipeCopy.steps ?? [],
+}); // placeholders!
 const emit = defineEmits(["editPost", "refreshPosts"]);
+
+const removeIngredient = (idx: number) => {
+  rec.ingredients = rec.ingredients.filter((_, id: number) => id !== idx - 1);
+  rec.ingredientsRows--;
+};
+const removeMethod = (idx: number) => {
+  rec.steps = rec.steps.filter((_, id: number) => id !== idx - 1);
+  rec.stepRows--;
+};
+
+const addNewIngredient = () => {
+  rec.ingredientsRows++;
+};
+
+const addNewMethod = () => {
+  rec.stepRows++;
+};
 
 const editPost = async (content: string) => {
   try {
@@ -20,67 +51,112 @@ const editPost = async (content: string) => {
 </script>
 
 <template>
-  <form @submit.prevent="editPost(JSON.stringify({ dishName: name, steps: [{ instructions: step1 }] }))">
-    <h3>Dish name</h3>
-    <textarea id="content" v-model="name" placeholder="Dish name" required> </textarea>
-    <h3>Step 1</h3>
-    <textarea id="content" v-model="step1" placeholder="Measure out the flour..." required> </textarea>
-
-    <div class="base">
-      <menu>
-        <li><button class="btn-small pure-button-primary pure-button" type="submit">Save</button></li>
-        <li><button class="btn-small pure-button" @click="emit('editPost')">Cancel</button></li>
-      </menu>
-      <p v-if="props.recipe.dateCreated !== props.recipe.dateUpdated" class="timestamp">Edited on: {{ formatDate(props.recipe.dateUpdated) }}</p>
-      <p v-else class="timestamp">Created on: {{ formatDate(props.recipe.dateCreated) }}</p>
+  <div class="add-recipe-popup">
+    <div class="popup-content">
+      <h2>Edit {{ rec.dishName }}</h2>
+      <form @submit.prevent="editPost(JSON.stringify(renderedToDocumentedRecipe(rec)))">
+        <div class="group">
+          <label>Title</label>
+          <input type="text" v-model="rec.dishName" />
+        </div>
+        <div class="group">
+          <label>Description</label>
+          <textarea v-model="rec.description"></textarea>
+        </div>
+        <div class="group">
+          <label>Ingredients</label>
+          <div class="ingredient" v-for="i in rec.ingredientsRows" :key="i">
+            <input type="text" v-model="rec.ingredients[i - 1]" />
+            <div @click="removeIngredient(i)">X</div>
+          </div>
+          <button type="button" @click="addNewIngredient">Add Ingredient</button>
+        </div>
+        <div class="group">
+          <label>Method</label>
+          <div class="method" v-for="i in rec.stepRows" :key="i">
+            <textarea v-model="rec.steps[i - 1]"></textarea>
+            <div @click="removeMethod(i)">X</div>
+          </div>
+          <button type="button" @click="addNewMethod">Add Step</button>
+        </div>
+        <menu>
+          <li><button class="btn-small pure-button-primary pure-button" type="submit">Save</button></li>
+          <li><button class="btn-small pure-button" @click="emit('editPost')">Cancel</button></li>
+        </menu>
+        <p v-if="props.recipe.dateCreated !== props.recipe.dateUpdated" class="timestamp">Edited on: {{ formatDate(props.recipe.dateUpdated) }}</p>
+        <p v-else class="timestamp">Created on: {{ formatDate(props.recipe.dateCreated) }}</p>
+      </form>
     </div>
-  </form>
+  </div>
 </template>
 
 <style scoped>
-form {
-  background-color: var(--base-bg);
+.add-recipe-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
-  flex-direction: column;
-  gap: 0.5em;
-}
-
-textarea {
-  font-family: inherit;
-  font-size: inherit;
-  height: 6em;
-  border-radius: 4px;
-  resize: none;
-}
-
-p {
-  margin: 0em;
-}
-
-.author {
-  font-weight: bold;
-  font-size: 1.2em;
-}
-
-menu {
-  list-style-type: none;
-  display: flex;
-  flex-direction: row;
-  gap: 1em;
-  padding: 0;
-  margin: 0;
-}
-
-.base {
-  display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
 }
+.add-recipe-popup .popup-content {
+  background-color: #081c33;
+  padding: 2rem;
+  border-radius: 1rem;
+  width: 100%;
+  max-width: 768px;
+  max-height: 75vh;
+  overflow-y: auto;
+}
+.popup-content h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+.popup-content .group {
+  margin-bottom: 1rem;
+}
+.popup-content .group label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+.popup-content .group input,
+.popup-content .group textarea {
+  display: block;
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-bottom: 1rem;
+}
+.popup-content .group textarea {
+  height: 100px;
+  resize: none;
+}
+.popup-content button[type="submit"] {
+  margin-right: 1rem;
+}
 
-.timestamp {
+.buttons {
   display: flex;
   justify-content: flex-end;
-  font-size: 0.9em;
-  font-style: italic;
+}
+
+.ingredient,
+.method {
+  display: flex;
+  gap: 3rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.ingredient div,
+.method div {
+  cursor: pointer;
+  color: #a61d1d;
+  font-weight: 700;
+  font-size: 24px;
 }
 </style>

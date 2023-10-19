@@ -5,15 +5,15 @@ import { MediaType } from "./helper/default_media_type";
 
 export interface ManuallyEnteredRecipe {
   dishName: string;
-  outputSpecification: Array<MediaType>;
-  setupRequirements: Array<MediaType>;
+  outputSpecification: string;
+  setupRequirements: Array<string>;
   steps: Array<MediaType>;
 }
 
 export interface RecipeDoc extends BaseDoc {
   dishName: string;
-  outputSpecification: Array<MediaType>;
-  setupRequirements: Array<MediaType>;
+  outputSpecification: string;
+  setupRequirements: Array<string>;
   steps: Array<MediaType>;
 }
 
