@@ -9,8 +9,12 @@ const { currentUsername } = storeToRefs(useUserStore());
 </script>
 
 <template>
-  <p class="author">author is TBD</p>
-  <p>{{ props.recipe.dishName }}</p>
+  <router-link v-bind:to="`/recipes/${props.recipe._id}`">
+    <div class="preview">
+      <p class="author">author is TBD</p>
+      <p>{{ props.recipe.dishName }}</p>
+    </div>
+  </router-link>
   <div class="base">
     <menu>
       <!-- TODO: instead of "true", check if the current user has access-->
@@ -59,5 +63,11 @@ menu {
 
 .base article:only-child {
   margin-left: auto;
+}
+
+a {
+  color: #ebb12a;
+  text-decoration: none;
+  background-color: rgb(213, 231, 255);
 }
 </style>
