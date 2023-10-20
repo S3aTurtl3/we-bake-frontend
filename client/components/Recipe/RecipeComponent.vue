@@ -11,8 +11,8 @@ const { currentUsername } = storeToRefs(useUserStore());
 <template>
   <router-link v-bind:to="`/recipes/${props.recipe._id}`">
     <div class="preview">
-      <p class="author">author is TBD</p>
-      <p>{{ props.recipe.dishName }}</p>
+      <h3>{{ props.recipe.dishName }}</h3>
+      <p>author is {{ props.recipe.moderator?.username ?? "Non-existent user" }}</p>
     </div>
   </router-link>
   <div class="base">

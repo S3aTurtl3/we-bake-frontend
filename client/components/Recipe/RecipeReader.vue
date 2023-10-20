@@ -7,16 +7,21 @@ import { ComputedRef, computed, ref } from "vue";
 const props = defineProps(["recipe"]);
 type MediaType = { instructions: string; visuals: Array<{ url: string }> };
 const loaded = ref(false);
-const recipeDoc = props.recipe;
+
+const recipeDoc = computed(() => {
+  if (props.recipe === undefined) return;
+  return props.recipe;
+});
 
 type ParsedRecipe = { dishName: string; outputSpecification: Array<MediaType>; setupRequirements: Array<MediaType>; steps: Array<MediaType>; authorName: string };
-const parsedRecipe: ComputedRef<ParsedRecipe> = computed(() => {
+const parsedRecipe: ComputedRef<ParsedRecipe | undefined> = computed(() => {
+  if (props.recipe === undefined) return;
   return {
     dishName: props.recipe.dishName ?? "Untitled Recipe",
     outputSpecification: props.recipe.outputSpecification ?? "",
     setupRequirements: props.recipe.setupRequirements ?? new Array<string>(),
     steps: props.recipe.steps ?? new Array<MediaType>(),
-    authorName: "REPLACE", // TODO: REplace
+    authorName: props.recipe.moderator.username ?? "(author not known)",
   };
 });
 
@@ -24,28 +29,33 @@ const { currentUsername } = storeToRefs(useUserStore());
 </script>
 
 <template>
-  <article v-if="parsedRecipe !== undefined">
+  <div class="recipe" v-if="parsedRecipe !== undefined">
     <h1>{{ parsedRecipe.dishName }}</h1>
-    <p class="author">author is TBD</p>
-    <h2>Description</h2>
-    <p>{{ parsedRecipe.outputSpecification }}</p>
-    <h2>Ingredients/Equipment</h2>
+    <p class="author">by {{ parsedRecipe.authorName }}</p>
+    <h4>Description</h4>
+    <p class="desc">{{ parsedRecipe.outputSpecification }}</p>
+    <hr />
+
     <div class="ingredient">
+      <h3>Ingredients/Equipment</h3>
+
       <ul>
         <li v-for="i in parsedRecipe.setupRequirements.length" :key="i">{{ parsedRecipe.setupRequirements[i - 1] }}</li>
       </ul>
     </div>
-    <h2>Steps</h2>
-    <ol>
-      <li v-for="i in parsedRecipe.steps.length" :key="i">{{ parsedRecipe.steps[i - 1] }}</li>
-    </ol>
+    <div class="method">
+      <h3>Steps</h3>
+      <ol>
+        <li v-for="i in parsedRecipe.steps.length" :key="i">{{ parsedRecipe.steps[i - 1] }}</li>
+      </ol>
+    </div>
     <div class="base">
       <article class="timestamp">
         <p v-if="recipeDoc.dateCreated !== recipeDoc.dateUpdated">Edited on: {{ formatDate(recipeDoc.dateUpdated) }}</p>
         <p v-else>Created on: {{ formatDate(recipeDoc.dateCreated) }}</p>
       </article>
     </div>
-  </article>
+  </div>
   <article v-else-if="loaded">
     <p>Recipe could not be loaded.</p>
   </article>
@@ -87,6 +97,45 @@ menu {
 }
 
 .base article:only-child {
+  margin-left: auto;
+}
+
+.recipe {
+  padding: 1rem;
+  max-width: 768px;
+  margin: 0 auto;
+}
+.desc {
+  font-size: 1.125rem;
+  line-height: 1.4;
+  margin-bottom: 1rem;
+}
+hr {
+  margin-bottom: 1rem;
+}
+h3 {
+  margin-bottom: 1rem;
+}
+.ingredients {
+  padding: 1rem;
+  background-color: #081c33;
+  border-radius: 0.5rem;
+  margin-bottom: 2rem;
+}
+.ingredients ul li {
+  list-style-position: inside;
+  line-height: 1.4;
+  margin-bottom: 1rem;
+}
+.method ol li {
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  list-style-position: inside;
+  border-bottom: 3px solid #eee;
+}
+
+.btn-edit {
+  display: block;
   margin-left: auto;
 }
 </style>

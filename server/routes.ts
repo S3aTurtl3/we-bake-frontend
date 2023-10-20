@@ -8,6 +8,8 @@ import { Router, getExpressRouter } from "./framework/router";
 import { parseInputAsObjectId } from "./parser";
 import Responses from "./responses";
 
+type RecipeWithModerator = RecipeDoc & { moderator: { username: string; _id: ObjectId; dateCreated: Date; dateUpdated: Date } };
+
 class Routes {
   @Router.get("/session")
   async getSessionUser(session: WebSessionDoc) {
@@ -106,7 +108,10 @@ class Routes {
 
     const user = WebSession.getUser(session);
     await AccessControl.assertHasAccess(user, parsedId, ContentType.RECIPE);
-    return await Recipe.getRecipeById(parsedId);
+    const recipe: RecipeDoc = await Recipe.getRecipeById(parsedId);
+    const moderatorId = await RecipeModeration.getModerator(parsedId);
+    const author = await User.getUserById(moderatorId);
+    return { ...recipe, moderator: author };
   }
 
   /**
@@ -122,7 +127,13 @@ class Routes {
     const accessibleRecipeIds: { _id: ObjectId }[] = (await AccessControl.getAccessibleContent(user, ContentType.RECIPE)).map((id) => {
       return { _id: id };
     });
-    const recipes: RecipeDoc[] = await Recipe.getRecipes({ $or: accessibleRecipeIds });
+    const recipeProcessess = (await Recipe.getRecipes({ $or: accessibleRecipeIds })).map(async (recipe: RecipeDoc) => {
+      const moderatorId = await RecipeModeration.getModerator(recipe._id);
+      const author = await User.getUserById(moderatorId);
+      return { ...recipe, moderator: author };
+    });
+
+    const recipes: RecipeWithModerator[] = await Promise.all(recipeProcessess);
 
     return { msg: "Success", recipes: recipes };
   }
