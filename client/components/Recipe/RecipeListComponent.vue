@@ -6,7 +6,6 @@ import { fetchy } from "@/utils/fetchy";
 import { storeToRefs } from "pinia";
 import { onBeforeMount, ref } from "vue";
 import CreateRecipeForm from "./CreateRecipeForm.vue"; // TODO: use @?
-import SearchPostForm from "./SearchPostForm.vue";
 
 const { isLoggedIn } = storeToRefs(useUserStore());
 
@@ -14,6 +13,7 @@ const loaded = ref(false);
 let posts = ref<Array<Record<string, string>>>([]); //TODO: use static type checking e.g. Array<Record<string, string>>
 let editing = ref("");
 let searchAuthor = ref("");
+const managingAccess = ref<boolean>(false);
 
 async function getRecipes(author?: string) {
   let query: Record<string, string> = author !== undefined ? { author } : {};
@@ -54,10 +54,13 @@ async function activateAccessManager(id: string) {
   } catch (_) {
     return;
   }
+  managingAccess.value = true; // should await the text to load
 }
 
 function disactivateAccessManager() {
+  managingAccess.value = false;
   objectOfAccessControl.value = defaultRecipeIdentifier;
+  disableAccessControlButtons.value = true;
 }
 
 type AccessRequestInput = {
@@ -111,12 +114,8 @@ const subjectOfAccessControlName = ref<string>(""); // the username of the user 
     <h2>Create a Recipe:</h2>
     <CreateRecipeForm @refreshPosts="getRecipes" />
   </section>
-  <div class="row">
-    <h2 v-if="!searchAuthor">Recipes:</h2>
-    <h2 v-else>Posts by {{ searchAuthor }}:</h2>
-    <SearchPostForm @getPostsByAuthor="getRecipes" />
-  </div>
-  <div class="accessControlManager">
+  <div class="accessControlManager" v-if="managingAccess">
+    <span class="action-buttons"><button v-on:click="() => disactivateAccessManager()">X</button></span>
     <div id="newUserAccess">
       <h3 class="recipeObjectName">Access for Recipe: {{ objectOfAccessControl.name }}</h3>
       <!--would be better to associate with an ID and thus visually, rather than displaying a name which could get out of sync-->
@@ -148,6 +147,16 @@ section {
   display: flex;
   flex-direction: column;
   gap: 1em;
+}
+
+.accessControlManager {
+  max-width: 50em;
+}
+
+span {
+  display: flex;
+  max-width: none;
+  justify-content: end;
 }
 
 section,
