@@ -12,7 +12,7 @@ const { currentUsername, isLoggedIn } = storeToRefs(useUserStore());
   <main>
     <h1>Recipes</h1>
     <section>
-      <p v-if="isLoggedIn">Welcome {{ currentUsername }}!</p>
+      <p v-if="!isLoggedIn">Log in to view recipes!</p>
     </section>
     <RecipeReaderAndEditor v-bind:recipeId="props.recipeId" />
   </main>
