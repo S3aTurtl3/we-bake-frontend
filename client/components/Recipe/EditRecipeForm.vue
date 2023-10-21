@@ -7,10 +7,18 @@ import { formatDate } from "../../utils/formatDate";
 const props = defineProps(["recipe"]);
 
 function renderedToDocumentedRecipe(recipe: RenderForEditRecipe): Recipe {
-  return { _id: recipe._id, dishName: recipe.dishName, outputSpecification: recipe.description, setupRequirements: recipe.ingredients, steps: recipe.steps };
+  return {
+    _id: recipe._id,
+    dishName: recipe.dishName,
+    outputSpecification: recipe.description,
+    setupRequirements: recipe.ingredients,
+    steps: recipe.stepInstructions.map((instructions, index) => {
+      return { instructions: instructions, visuals: recipe.stepVisuals[index] };
+    }),
+  };
 }
 
-const recipeCopy = JSON.parse(JSON.stringify(props.recipe));
+const recipeCopy: Recipe = JSON.parse(JSON.stringify(props.recipe));
 const rec: RenderForEditRecipe = reactive({
   _id: recipeCopy._id,
   ingredientsRows: recipeCopy.setupRequirements ? recipeCopy.setupRequirements.length : 0,
@@ -18,7 +26,8 @@ const rec: RenderForEditRecipe = reactive({
   dishName: recipeCopy.dishName ?? "untitled recipe",
   ingredients: recipeCopy.setupRequirements ?? [],
   description: recipeCopy.outputSpecification ?? "",
-  steps: recipeCopy.steps ?? [],
+  stepInstructions: recipeCopy.steps ? recipeCopy.steps.map(({ instructions }) => instructions) : [],
+  stepVisuals: recipeCopy.steps ? recipeCopy.steps.map(({ visuals }) => visuals) : [],
 }); // placeholders!
 const emit = defineEmits(["editPost", "refreshPosts"]);
 
@@ -27,7 +36,8 @@ const removeIngredient = (idx: number) => {
   rec.ingredientsRows--;
 };
 const removeMethod = (idx: number) => {
-  rec.steps = rec.steps.filter((_, id: number) => id !== idx - 1);
+  rec.stepInstructions = rec.stepInstructions.filter((_, id: number) => id !== idx - 1);
+  rec.stepVisuals = rec.stepVisuals.filter((_, id: number) => id !== idx - 1);
   rec.stepRows--;
 };
 
@@ -74,7 +84,8 @@ const editPost = async (content: string) => {
         <div class="group">
           <label>Method</label>
           <div class="method" v-for="i in rec.stepRows" :key="i">
-            <textarea v-model="rec.steps[i - 1]"></textarea>
+            <textarea v-model="rec.stepInstructions[i - 1]"></textarea>
+            <input type="text" placeholder="image url" v-model="rec.stepVisuals[i - 1]" />
             <div @click="removeMethod(i)">X</div>
           </div>
           <button type="button" @click="addNewMethod">Add Step</button>

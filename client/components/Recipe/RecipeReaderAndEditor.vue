@@ -16,7 +16,7 @@ function toggleEditView() {
 
 async function stopEditing() {
   await loadRecipe();
-  toggleEditView();
+  editing.value = false;
 }
 
 async function loadRecipe() {

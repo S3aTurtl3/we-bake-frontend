@@ -5,7 +5,7 @@ import { storeToRefs } from "pinia";
 import { ComputedRef, computed, ref } from "vue";
 
 const props = defineProps(["recipe"]);
-type MediaType = { instructions: string; visuals: Array<{ url: string }> };
+type MediaType = { instructions: string; visuals: string };
 const loaded = ref(false);
 
 const recipeDoc = computed(() => {
@@ -46,7 +46,12 @@ const { currentUsername } = storeToRefs(useUserStore());
     <div class="method">
       <h3>Steps</h3>
       <ol>
-        <li v-for="i in parsedRecipe.steps.length" :key="i">{{ parsedRecipe.steps[i - 1] }}</li>
+        <li v-for="i in parsedRecipe.steps.length" :key="i">
+          <div class="step">
+            <p>{{ parsedRecipe.steps[i - 1].instructions }}</p>
+            <img v-bind:src="parsedRecipe.steps[i - 1].visuals" v-if="parsedRecipe.steps[i - 1].visuals" />
+          </div>
+        </li>
       </ol>
     </div>
     <div class="base">
@@ -104,6 +109,10 @@ menu {
   padding: 1rem;
   max-width: 768px;
   margin: 0 auto;
+}
+
+img {
+  max-width: 30em;
 }
 .desc {
   font-size: 1.125rem;

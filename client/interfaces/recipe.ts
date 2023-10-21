@@ -3,7 +3,8 @@ export interface RenderForEditRecipe {
   dishName: string;
   description: string;
   ingredients: string[];
-  steps: string[]; // TODO: cast as mediatype
+  stepInstructions: string[];
+  stepVisuals: string[];
   ingredientsRows: number;
   stepRows: number;
 }
@@ -13,5 +14,5 @@ export interface Recipe {
   dishName: string;
   outputSpecification: string;
   setupRequirements: string[];
-  steps: string[]; // TODO: cast as mediatype
+  steps: { instructions: string; visuals: string }[]; // TODO: cast as mediatype
 }
