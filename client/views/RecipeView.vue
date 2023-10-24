@@ -10,7 +10,6 @@ const { currentUsername, isLoggedIn } = storeToRefs(useUserStore());
 
 <template>
   <main>
-    <h1>Recipes</h1>
     <section>
       <p v-if="!isLoggedIn">Log in to view recipes!</p>
     </section>

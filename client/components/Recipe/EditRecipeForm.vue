@@ -64,10 +64,14 @@ const editPost = async (content: string) => {
   <div class="add-recipe-popup">
     <div class="popup-content">
       <h2>Edit {{ rec.dishName }}</h2>
-      <form @submit.prevent="editPost(JSON.stringify(renderedToDocumentedRecipe(rec)))">
+      <v-form @submit.prevent="editPost(JSON.stringify(renderedToDocumentedRecipe(rec)))">
+        <menu>
+          <li><button class="btn-small pure-button-primary pure-button" type="submit">Save</button></li>
+          <li><button class="btn-small pure-button" @click="emit('editPost')">Cancel</button></li>
+        </menu>
         <div class="group">
           <label>Title</label>
-          <input type="text" v-model="rec.dishName" />
+          <v-text-field type="text" v-model="rec.dishName" />
         </div>
         <div class="group">
           <label>Description</label>
@@ -77,26 +81,28 @@ const editPost = async (content: string) => {
           <label>Ingredients</label>
           <div class="ingredient" v-for="i in rec.ingredientsRows" :key="i">
             <input type="text" v-model="rec.ingredients[i - 1]" />
-            <div @click="removeIngredient(i)">X</div>
+            <v-btn @click="removeIngredient(i)">X</v-btn>
           </div>
-          <button type="button" @click="addNewIngredient">Add Ingredient</button>
+          <v-btn type="button" @click="addNewIngredient">Add Ingredient</v-btn>
         </div>
         <div class="group">
-          <label>Method</label>
-          <div class="method" v-for="i in rec.stepRows" :key="i">
-            <textarea v-model="rec.stepInstructions[i - 1]"></textarea>
-            <input type="text" placeholder="image url" v-model="rec.stepVisuals[i - 1]" />
-            <div @click="removeMethod(i)">X</div>
-          </div>
-          <button type="button" @click="addNewMethod">Add Step</button>
+          <label>Steps</label>
+          <v-row class="method" v-for="i in rec.stepRows" :key="i">
+            <v-col>
+              <v-textarea label="Instructions" v-model="rec.stepInstructions[i - 1]"></v-textarea>
+            </v-col>
+            <v-col>
+              <v-text-field label="Image Url (optional)" type="text" placeholder="image url" v-model="rec.stepVisuals[i - 1]" />
+            </v-col>
+            <v-col cols="1">
+              <v-btn @click="removeMethod(i)">X</v-btn>
+            </v-col>
+          </v-row>
+          <v-btn type="button" @click="addNewMethod">Add Step</v-btn>
         </div>
-        <menu>
-          <li><button class="btn-small pure-button-primary pure-button" type="submit">Save</button></li>
-          <li><button class="btn-small pure-button" @click="emit('editPost')">Cancel</button></li>
-        </menu>
         <p v-if="props.recipe.dateCreated !== props.recipe.dateUpdated" class="timestamp">Edited on: {{ formatDate(props.recipe.dateUpdated) }}</p>
         <p v-else class="timestamp">Created on: {{ formatDate(props.recipe.dateCreated) }}</p>
-      </form>
+      </v-form>
     </div>
   </div>
 </template>
@@ -122,7 +128,7 @@ menu {
   align-items: center;
 }
 .add-recipe-popup .popup-content {
-  background-color: #081c33;
+  background-color: #fffce6;
   padding: 2rem;
   border-radius: 1rem;
   width: 100%;
@@ -171,10 +177,14 @@ menu {
   margin-bottom: 1rem;
 }
 
+label {
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
 .ingredient div,
 .method div {
   cursor: pointer;
-  color: #a61d1d;
   font-weight: 700;
   font-size: 24px;
 }

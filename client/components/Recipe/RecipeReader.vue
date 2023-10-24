@@ -30,30 +30,45 @@ const { currentUsername } = storeToRefs(useUserStore());
 
 <template>
   <div class="recipe" v-if="parsedRecipe !== undefined">
-    <h1>{{ parsedRecipe.dishName }}</h1>
-    <p class="author">by {{ parsedRecipe.authorName }}</p>
-    <h4>Description</h4>
+    <v-row align="center" justify="start" space>
+      <h1>{{ parsedRecipe.dishName }}</h1>
+      <v-col>
+        <p class="author">by {{ parsedRecipe.authorName }}</p>
+      </v-col>
+    </v-row>
+    <h4 v-if="parsedRecipe.outputSpecification">Description</h4>
     <p class="desc">{{ parsedRecipe.outputSpecification }}</p>
     <hr />
+    <v-container>
+      <v-row>
+        <v-col cols="3">
+          <!-- Ingredients go here -->
 
-    <div class="ingredient">
-      <h3>Ingredients/Equipment</h3>
+          <div class="ingredient">
+            <h2>Ingredients</h2>
 
-      <ul>
-        <li v-for="i in parsedRecipe.setupRequirements.length" :key="i">{{ parsedRecipe.setupRequirements[i - 1] }}</li>
-      </ul>
-    </div>
-    <div class="method">
-      <h3>Steps</h3>
-      <ol>
-        <li v-for="i in parsedRecipe.steps.length" :key="i">
-          <div class="step">
-            <p>{{ parsedRecipe.steps[i - 1].instructions }}</p>
-            <img v-bind:src="parsedRecipe.steps[i - 1].visuals" v-if="parsedRecipe.steps[i - 1].visuals" />
+            <ul>
+              <li v-for="i in parsedRecipe.setupRequirements.length" :key="i">{{ parsedRecipe.setupRequirements[i - 1] }}</li>
+            </ul>
           </div>
-        </li>
-      </ol>
-    </div>
+        </v-col>
+        <v-col cols="9">
+          <!-- Steps go here -->
+
+          <div class="method">
+            <h2>Steps</h2>
+            <ol>
+              <li v-for="i in parsedRecipe.steps.length" :key="i">
+                <div class="step">
+                  <p>{{ parsedRecipe.steps[i - 1].instructions }}</p>
+                  <img v-bind:src="parsedRecipe.steps[i - 1].visuals" v-if="parsedRecipe.steps[i - 1].visuals" />
+                </div>
+              </li>
+            </ol>
+          </div>
+        </v-col>
+      </v-row>
+    </v-container>
     <div class="base">
       <article class="timestamp">
         <p v-if="recipeDoc.dateCreated !== recipeDoc.dateUpdated">Edited on: {{ formatDate(recipeDoc.dateUpdated) }}</p>
@@ -70,6 +85,8 @@ const { currentUsername } = storeToRefs(useUserStore());
 </template>
 
 <style scoped>
+@import url("https://fonts.googleapis.com/css?family=Rubik");
+
 p {
   margin: 0em;
 }
@@ -107,8 +124,8 @@ menu {
 
 .recipe {
   padding: 1rem;
-  max-width: 768px;
   margin: 0 auto;
+  max-width: 50em;
 }
 
 img {

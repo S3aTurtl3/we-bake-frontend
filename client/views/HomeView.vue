@@ -8,10 +8,9 @@ const { currentUsername, isLoggedIn } = storeToRefs(useUserStore());
 
 <template>
   <main>
-    <h1>My Recipes</h1>
+    <h1>Recipes</h1>
     <section>
-      <h1 v-if="isLoggedIn">Welcome {{ currentUsername }}!</h1>
-      <h3 v-else>Login to make, view, and share recipes</h3>
+      <h3 v-if="!isLoggedIn">Login to make, view, and share recipes</h3>
     </section>
     <RecipeListComponent />
   </main>

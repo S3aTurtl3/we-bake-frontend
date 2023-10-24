@@ -12,7 +12,7 @@ const { currentUsername } = storeToRefs(useUserStore());
   <router-link v-bind:to="`/recipes/${props.recipe._id}`">
     <div class="preview">
       <h3>{{ props.recipe.dishName }}</h3>
-      <p>author is {{ props.recipe.moderator?.username ?? "Non-existent user" }}</p>
+      <p>author: {{ props.recipe.moderator?.username ?? "Non-existent user" }}</p>
     </div>
   </router-link>
   <div class="base">
@@ -22,11 +22,11 @@ const { currentUsername } = storeToRefs(useUserStore());
       <!-- TODO: instead of "true", check if the current user is author-->
       <li v-if="true"><button class="btn-small pure-button" @click="emit('manageAccess', props.recipe._id)">Manage Access Controls</button></li>
     </menu>
-    <article class="timestamp">
-      <p v-if="props.recipe.dateCreated !== props.recipe.dateUpdated">Edited on: {{ formatDate(props.recipe.dateUpdated) }}</p>
-      <p v-else>Created on: {{ formatDate(props.recipe.dateCreated) }}</p>
-    </article>
   </div>
+  <article class="timestamp">
+    <p v-if="props.recipe.dateCreated !== props.recipe.dateUpdated">Edited on: {{ formatDate(props.recipe.dateUpdated) }}</p>
+    <p v-else>Created on: {{ formatDate(props.recipe.dateCreated) }}</p>
+  </article>
 </template>
 
 <style scoped>
@@ -59,6 +59,7 @@ menu {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .base article:only-child {
@@ -66,8 +67,8 @@ menu {
 }
 
 a {
-  color: #ebb12a;
+  color: #3a2513;
   text-decoration: none;
-  background-color: rgb(213, 231, 255);
+  background-color: rgb(255, 252, 234);
 }
 </style>

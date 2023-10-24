@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import router from "../../router";
 import { fetchy } from "../../utils/fetchy";
 
 const content = ref("");
@@ -7,8 +8,9 @@ const emit = defineEmits(["refreshPosts"]);
 
 const createRecipe = async (content: string) => {
   // TODO: validations
+  let recipeCreationResponse: { recipeId: string };
   try {
-    await fetchy("api/recipes", "POST", {
+    recipeCreationResponse = await fetchy("api/recipes", "POST", {
       body: { recipe: content },
     });
   } catch (_) {
@@ -16,6 +18,7 @@ const createRecipe = async (content: string) => {
   }
   emit("refreshPosts");
   emptyForm();
+  await router.push({ path: `/recipes/${recipeCreationResponse.recipeId}` });
 };
 
 const emptyForm = () => {

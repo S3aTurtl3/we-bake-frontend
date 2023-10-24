@@ -41,8 +41,13 @@ onBeforeMount(async () => {
 <template>
   <!--use bread-crumb-->
   <div v-if="loaded">
-    <button v-on:click="toggleEditView" v-if="!editing">Edit</button>
-    <RecipeReader v-bind:recipe="recipe" />
+    <div class="header">
+      <v-row justify="space-between">
+        <v-breadcrumbs :items="[{ title: 'Recipes', href: '/recipes' }, recipe.dishName]"></v-breadcrumbs>
+        <v-btn v-on:click="toggleEditView" v-if="!editing">Edit</v-btn>
+      </v-row>
+    </div>
+    <RecipeReader v-bind:recipe="recipe" v-on:toggleEdit="toggleEditView" />
     <EditRecipeForm v-if="editing" v-bind:recipe="recipe" v-on:refreshPosts="loadRecipe" v-on:editPost="stopEditing" />
   </div>
 </template>

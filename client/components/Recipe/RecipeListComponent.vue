@@ -124,7 +124,7 @@ const subjectOfAccessControlName = ref<string>(""); // the username of the user 
           Username
           <input type="text" v-model="subjectOfAccessControlName" />
         </label>
-        <button v-bind:disabled="disableAccessControlButtons" @click="() => grantSubjectAccessToObject({ subject: subjectOfAccessControlName, object: objectOfAccessControl.id })">Grant access</button>
+        <v-btn v-bind:disabled="disableAccessControlButtons" @click="() => grantSubjectAccessToObject({ subject: subjectOfAccessControlName, object: objectOfAccessControl.id })">Grant access</v-btn>
         <button v-bind:disabled="disableAccessControlButtons" @click="() => removeSubjectAccessToObject({ subject: subjectOfAccessControlName, object: objectOfAccessControl.id })">
           Remove access
         </button>
@@ -132,14 +132,16 @@ const subjectOfAccessControlName = ref<string>(""); // the username of the user 
       </div>
     </div>
   </div>
-  <section class="posts" v-if="loaded && posts.length !== 0">
-    <article v-for="post in posts" :key="post._id">
-      <RecipeComponent v-if="editing !== post._id" :recipe="post" @refreshPosts="getRecipes" @editPost="updateEditing" v-on:manage-access="activateAccessManager" />
-      <EditRecipeForm v-else :recipe="post" @refreshPosts="getRecipes" @editPost="updateEditing" />
-    </article>
+  <section class="existing-content">
+    <section class="posts" v-if="loaded && posts.length !== 0">
+      <article v-for="post in posts" :key="post._id">
+        <RecipeComponent v-if="editing !== post._id" :recipe="post" @refreshPosts="getRecipes" @editPost="updateEditing" v-on:manage-access="activateAccessManager" />
+        <EditRecipeForm v-else :recipe="post" @refreshPosts="getRecipes" @editPost="updateEditing" />
+      </article>
+    </section>
+    <p v-else-if="loaded">No posts found</p>
+    <p v-else>Loading...</p>
   </section>
-  <p v-else-if="loaded">No posts found</p>
-  <p v-else>Loading...</p>
 </template>
 
 <style scoped>
@@ -176,7 +178,16 @@ article {
 }
 
 .posts {
-  padding: 1em;
+  padding: 0.5em;
+  flex-flow: row wrap;
+  justify-content: flex-start;
+  max-width: 100em;
+}
+
+.existing-content {
+  display: flex;
+  justify-content: center;
+  max-width: 80em;
 }
 
 .row {
