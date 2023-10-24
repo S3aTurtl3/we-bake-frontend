@@ -41,9 +41,9 @@ onBeforeMount(async () => {
 <template>
   <!--use bread-crumb-->
   <div v-if="loaded">
-    <div class="header">
+    <div class="head">
       <v-row justify="space-between">
-        <v-breadcrumbs :items="[{ title: 'Recipes', href: '/recipes' }, recipe.dishName]"></v-breadcrumbs>
+        <v-breadcrumbs :items="[{ title: 'Recipes', href: '/' }, recipe.dishName]"></v-breadcrumbs>
         <v-btn v-on:click="toggleEditView" v-if="!editing">Edit</v-btn>
       </v-row>
     </div>
@@ -60,6 +60,11 @@ p {
 .author {
   font-weight: bold;
   font-size: 1.2em;
+}
+
+.head {
+  max-width: 50em;
+  margin: 0 auto;
 }
 
 menu {
