@@ -2,6 +2,7 @@
 import { useUserStore } from "@/stores/user";
 import { formatDate } from "@/utils/formatDate";
 import { storeToRefs } from "pinia";
+import AccessControlManager from "./AccessControlManager.vue";
 
 const props = defineProps(["recipe"]);
 const emit = defineEmits(["editPost", "refreshPosts", "manageAccess"]);
@@ -18,9 +19,9 @@ const { currentUsername } = storeToRefs(useUserStore());
   <div class="base">
     <menu>
       <!-- TODO: instead of "true", check if the current user has access-->
-      <li v-if="true"><button class="btn-small pure-button" @click="emit('editPost', props.recipe._id)">Edit</button></li>
+      <li v-if="false"><button class="btn-small pure-button" @click="emit('editPost', props.recipe._id)">Edit</button></li>
       <!-- TODO: instead of "true", check if the current user is author-->
-      <li v-if="true"><button class="btn-small pure-button" @click="emit('manageAccess', props.recipe._id)">Manage Access Controls</button></li>
+      <li v-if="false"><access-control-manager v-bind:recipe-id="recipe._id" /></li>
     </menu>
   </div>
   <article class="timestamp">

@@ -4,11 +4,13 @@ import { useUserStore } from "@/stores/user";
 import { storeToRefs } from "pinia";
 import { onBeforeMount, ref } from "vue";
 import { fetchy } from "../../utils/fetchy";
+import AccessControlManager from "./AccessControlManager.vue";
 import EditRecipeForm from "./EditRecipeForm.vue";
 const props = defineProps(["recipeId"]);
 const editing = ref(false);
 const recipe = ref();
 const loaded = ref(false);
+const isMod = ref(false);
 
 function toggleEditView() {
   editing.value = !editing.value;
@@ -30,7 +32,7 @@ async function loadRecipe() {
   recipe.value = fetchResults;
 }
 
-const { currentUsername } = storeToRefs(useUserStore());
+const { currentUsername, currentUserid } = storeToRefs(useUserStore());
 
 onBeforeMount(async () => {
   await loadRecipe(); // TODO: Catch error from server when not logged in
@@ -44,7 +46,9 @@ onBeforeMount(async () => {
     <div class="head">
       <v-row justify="space-between">
         <v-breadcrumbs :items="[{ title: 'Recipes', href: '/' }, recipe.dishName]"></v-breadcrumbs>
+        <v-spacer></v-spacer>
         <v-btn v-on:click="toggleEditView" v-if="!editing">Edit</v-btn>
+        <AccessControlManager v-bind:recipe-id="props.recipeId" v-if="recipe.moderator._id === currentUserid" />
       </v-row>
     </div>
     <RecipeReader v-bind:recipe="recipe" v-on:toggleEdit="toggleEditView" />

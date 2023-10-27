@@ -45,14 +45,15 @@ async function grantSubjectAccessToObject(requestedAccessControl: AccessRequestI
   // convert the subjectName to an id
   let subjectId: string = "";
   try {
-    const subjectInfo = await fetchy(`api/users/${requestedAccessControl.subject}`, "GET");
+    const subjectInfo = await fetchy(`/api/users/${requestedAccessControl.subject}`, "GET");
     subjectId = subjectInfo._id;
+    subjectOfAccessControlName.value = "";
   } catch (_) {
     return;
   }
 
   try {
-    await fetchy(`api/recipe_access_controls/users/${subjectId}/accessibleContent`, "PUT", { body: { recipeId: requestedAccessControl.object } }); // TODO: display state of user access (whether they have it or not)
+    await fetchy(`/api/recipe_access_controls/users/${subjectId}/accessibleContent`, "PUT", { body: { recipeId: requestedAccessControl.object } }); // TODO: display state of user access (whether they have it or not)
   } catch (_) {
     return;
   }
@@ -62,14 +63,15 @@ async function removeSubjectAccessToObject(requestedAccessControl: AccessRequest
   // convert the subjectName to an id
   let subjectId: string = "";
   try {
-    const subjectInfo = await fetchy(`api/users/${requestedAccessControl.subject}`, "GET");
+    const subjectInfo = await fetchy(`/api/users/${requestedAccessControl.subject}`, "GET");
     subjectId = subjectInfo._id;
+    subjectOfAccessControlName.value = "";
   } catch (_) {
     return;
   }
 
   try {
-    await fetchy(`api/recipe_access_controls/users/${subjectId}/accessibleContent/${requestedAccessControl.object}`, "DELETE"); // TODO: display state of user access (whether they have it or not)
+    await fetchy(`/api/recipe_access_controls/users/${subjectId}/accessibleContent/${requestedAccessControl.object}`, "DELETE"); // TODO: display state of user access (whether they have it or not)
   } catch (_) {
     return;
   }
@@ -83,28 +85,55 @@ onBeforeMount(async () => {
 </script>
 
 <template>
-  <div class="accessControlManager">
-    <div class="popup-content">
-      <span class="action-buttons"><button v-on:click="() => disactivateAccessManager()">X</button></span>
-      <div id="newUserAccess">
-        <h3 class="recipeObjectName">Access for Recipe: {{ objectOfAccessControl.name }}</h3>
-        <!--would be better to associate with an ID and thus visually, rather than displaying a name which could get out of sync-->
+  <v-dialog width="500">
+    <template v-slot:activator="{ props }">
+      <v-btn v-bind="props" text="Grant access to certain users"> </v-btn>
+    </template>
+
+    <template v-slot:default="{ isActive }">
+      <v-card title="User Permissions">
         <div class="field">
+          <p class="recipeObjectName">
+            Recipe: <b>{{ objectOfAccessControl.name }}</b>
+          </p>
+
           <label>
-            Username
-            <input type="text" v-model="subjectOfAccessControlName" />
+            User whose access you want to manage:
+            <v-text-field label="Username" v-model="subjectOfAccessControlName" />
           </label>
-          <button v-bind:disabled="disableAccessControlButtons" @click="() => grantSubjectAccessToObject({ subject: subjectOfAccessControlName, object: objectOfAccessControl.id })">
-            Grant access
-          </button>
-          <button v-bind:disabled="disableAccessControlButtons" @click="() => removeSubjectAccessToObject({ subject: subjectOfAccessControlName, object: objectOfAccessControl.id })">
-            Remove access
-          </button>
-          <!--show current state-->
         </div>
-      </div>
-    </div>
-  </div>
+        <v-btn
+          color="teal-lighten-3"
+          v-bind:disabled="disableAccessControlButtons"
+          @click="() => grantSubjectAccessToObject({ subject: subjectOfAccessControlName, object: objectOfAccessControl.id })"
+        >
+          Grant access
+        </v-btn>
+        <v-btn
+          color="red-lighten-4"
+          v-bind:disabled="disableAccessControlButtons"
+          @click="() => removeSubjectAccessToObject({ subject: subjectOfAccessControlName, object: objectOfAccessControl.id })"
+        >
+          Remove access
+        </v-btn>
+        <!--show current state-->
+
+        <v-card-actions>
+          <v-spacer></v-spacer>
+
+          <v-btn
+            text="Back>"
+            @click="
+              () => {
+                isActive.value = false;
+                objectOfAccessControl = defaultRecipeIdentifier; // make disabling of buttons computed so it updates in response to this change
+              }
+            "
+          ></v-btn>
+        </v-card-actions>
+      </v-card>
+    </template>
+  </v-dialog>
 </template>
 
 <style scoped>
@@ -119,6 +148,7 @@ onBeforeMount(async () => {
   justify-content: center;
   align-items: center;
 }
+
 .accessControlManager .popup-content {
   background-color: #081c33;
   padding: 2rem;
