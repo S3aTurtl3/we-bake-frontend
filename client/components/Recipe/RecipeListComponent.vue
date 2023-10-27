@@ -114,24 +114,7 @@ const subjectOfAccessControlName = ref<string>(""); // the username of the user 
     <h2>Create a Recipe:</h2>
     <CreateRecipeForm @refreshPosts="getRecipes" />
   </section>
-  <div class="accessControlManager" v-if="managingAccess">
-    <span class="action-buttons"><button v-on:click="() => disactivateAccessManager()">X</button></span>
-    <div id="newUserAccess">
-      <h3 class="recipeObjectName">Access for Recipe: {{ objectOfAccessControl.name }}</h3>
-      <!--would be better to associate with an ID and thus visually, rather than displaying a name which could get out of sync-->
-      <div class="field">
-        <label>
-          Username
-          <input type="text" v-model="subjectOfAccessControlName" />
-        </label>
-        <v-btn v-bind:disabled="disableAccessControlButtons" @click="() => grantSubjectAccessToObject({ subject: subjectOfAccessControlName, object: objectOfAccessControl.id })">Grant access</v-btn>
-        <button v-bind:disabled="disableAccessControlButtons" @click="() => removeSubjectAccessToObject({ subject: subjectOfAccessControlName, object: objectOfAccessControl.id })">
-          Remove access
-        </button>
-        <!--show current state-->
-      </div>
-    </div>
-  </div>
+
   <section class="existing-content">
     <section class="posts" v-if="loaded && posts.length !== 0">
       <article v-for="post in posts" :key="post._id">
@@ -169,7 +152,7 @@ p,
 }
 
 article {
-  background-color: var(--base-bg);
+  background-color: wheat;
   border-radius: 1em;
   display: flex;
   flex-direction: column;

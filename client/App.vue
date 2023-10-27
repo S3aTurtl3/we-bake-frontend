@@ -25,7 +25,7 @@ onBeforeMount(async () => {
 <template>
   <v-app>
     <header>
-      <nav>
+      <nav style="background-color: wheat">
         <div class="title">
           <img src="@/assets/images/logo.svg" />
           <RouterLink :to="{ name: 'Home' }">

@@ -142,6 +142,12 @@ hr {
 h3 {
   margin-bottom: 1rem;
 }
+
+.ingredient {
+  border-radius: 1em;
+  background-color: wheat;
+  padding: 1rem;
+}
 .ingredients {
   padding: 1rem;
   background-color: #081c33;

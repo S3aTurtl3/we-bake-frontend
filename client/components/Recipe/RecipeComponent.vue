@@ -68,6 +68,8 @@ menu {
 }
 
 a {
+  border-radius: 1em;
+  padding: 1rem;
   color: #3a2513;
   text-decoration: none;
   background-color: rgb(255, 252, 234);
